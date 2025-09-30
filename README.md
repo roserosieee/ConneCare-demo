@@ -1,7 +1,4 @@
 # ConneCare-demo
-AI-powered caregiving assistant prototype
-
-**Reimagining Chronic Disease Caregiving with AI**
 
 ConneCare is an AI-powered assistant designed to support caregivers of chronic disease patients in Hong Kong. The app helps reduce stress, manage daily caregiving tasks, and promote physical and mental well-being.
 
