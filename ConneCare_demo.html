@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ConneCare - 照顧者智能助手</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial; background: #f5f5f5; }
+        .container { max-width: 420px; margin: 0 auto; padding: 15px; }
+        .header { text-align: center; margin-bottom: 25px; }
+        .title { font-size: 26px; font-weight: bold; color: #333; margin-bottom: 5px; }
+        .subtitle { font-size: 14px; color: #666; }
+        .stats { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
+        .lang-bar { text-align: center; margin-bottom: 20px; }
+        .lang-btn { margin: 0 3px; padding: 6px 12px; border: none; border-radius: 15px; background: #007AFF; color: white; cursor: pointer; font-size: 12px; }
+        .lang-btn:hover { background: #0056CC; }
+        .lang-btn.active { background: #34C759; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .menu-item { 
+            background: white; padding: 15px 10px; border-radius: 10px; text-align: center; cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s; position: relative;
+        }
+        .menu-item:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .menu-item.urgent { border: 2px solid #FF3B30; }
+        .icon { font-size: 28px; margin-bottom: 8px; }
+        .menu-text { font-size: 13px; font-weight: 500; color: #333; }
+        .badge { position: absolute; top: -5px; right: -5px; background: #FF3B30; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+        .demo-panel { background: white; margin-top: 15px; padding: 20px; border-radius: 10px; display: none; max-height: 400px; overflow-y: auto; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .back-btn { background: #f0f0f0; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
+        .item-card { background: #f8f9fa; padding: 12px; margin: 8px 0; border-radius: 8px; border-left: 4px solid #007AFF; }
+        .item-urgent { border-left-color: #FF3B30; }
+        .item-done { border-left-color: #34C759; opacity: 0.7; }
+        .btn { padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; margin: 2px; font-size: 12px; }
+        .btn-primary { background: #007AFF; color: white; }
+        .btn-success { background: #34C759; color: white; }
+        .btn-warning { background: #FF9500; color: white; }
+        .btn-danger { background: #FF3B30; color: white; }
+        .progress-bar { background: #e0e0e0; height: 8px; border-radius: 4px; margin: 10px 0; }
+        .progress-fill { background: #34C759; height: 100%; border-radius: 4px; transition: width 0.3s; }
+        .health-metric { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .metric-value { font-weight: bold; }
+        .metric-normal { color: #34C759; }
+        .metric-warning { color: #FF9500; }
+        .metric-danger { color: #FF3B30; }
+        .gamification { background: linear-gradient(135deg, #FF9500 0%, #FF6B35 100%); color: white; padding: 15px; border-radius: 10px; margin: 10px 0; }
+        .achievement { display: inline-block; background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 15px; margin: 2px; font-size: 12px; }
+        .district-selector { margin-bottom: 20px; }
+        .district-btn { margin: 2px; padding: 6px 12px; border: none; border-radius: 15px; background: #f0f0f0; cursor: pointer; font-size: 12px; }
+        .district-btn.active { background: #007AFF; color: white; }
+        .resource-item { background: #f8f9fa; padding: 12px; margin: 8px 0; border-radius: 8px; border-left: 4px solid #34C759; }
+        .status { font-weight: bold; }
+        .status-available { color: #34C759; }
+        .status-busy { color: #FF9500; }
+        .status-full { color: #FF3B30; }
+        .scan-area { border: 2px dashed #007AFF; padding: 20px; text-align: center; margin: 15px 0; border-radius: 10px; background: #f8f9ff; }
+        .scan-preview { max-width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin: 10px 0; }
+        .ocr-result { background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 10px 0; border: 1px solid #34C759; }
+        .extracted-info { background: #fff3cd; padding: 10px; border-radius: 5px; margin: 5px 0; border-left: 3px solid #ffc107; }
+        #camera-input { display: none; }
+        .quote-popup { 
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 350px; text-align: center; z-index: 1000; display: none;
+        }
+        .quote-text { font-size: 16px; line-height: 1.5; margin-bottom: 15px; }
+        .quote-author { font-size: 12px; opacity: 0.8; margin-bottom: 20px; }
+        .quote-close { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 20px; cursor: pointer; }
+        .stress-alert { 
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            color: white; padding: 15px; border-radius: 10px; margin: 10px 0;
+            border-left: 5px solid #FF3B30; animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .caregiver-status { display: flex; align-items: center; padding: 12px; margin: 8px 0; border-radius: 8px; }
+        .status-normal { background: #e8f5e8; border-left: 4px solid #34C759; }
+        .status-warning { background: #fff3cd; border-left: 4px solid #FF9500; }
+        .status-critical { background: #f8d7da; border-left: 4px solid #FF3B30; }
+        .user-avatar { width: 30px; height: 30px; border-radius: 50%; background: #007AFF; color: white; display: flex; align-items: center; justify-content: center; margin-right: 10px; font-size: 12px; }
+        .avatar-normal { background: #34C759; }
+        .avatar-warning { background: #FF9500; }
+        .avatar-critical { background: #FF3B30; }
+        .stress-indicator { font-size: 12px; padding: 3px 8px; border-radius: 10px; margin-left: auto; }
+        .stress-low { background: #d4edda; color: #155724; }
+        .stress-medium { background: #fff3cd; color: #856404; }
+        .stress-high { background: #f8d7da; color: #721c24; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; display: none; }
+        .enlarged-text { font-size: 1.2em !important; }
+        .enlarged-text .menu-text { font-size: 15px !important; }
+        .enlarged-text .subtitle { font-size: 16px !important; }
+        .enlarged-text .btn { font-size: 14px !important; }
+        .enlarged-text .item-card { font-size: 14px !important; }
+        .enlarged-text .icon { display: none !important; }
+        .enlarged-text .badge { display: none !important; }
+        .emergency-btn { background: #FF3B30 !important; color: white !important; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div style="position: relative;">
+                <h1 class="title">ConneCare</h1>
+                <button id="text-size-btn" onclick="toggleTextSize()" style="position: absolute; top: 0; right: 0; background: #f0f0f0; border: none; padding: 6px 10px; border-radius: 15px; cursor: pointer; font-size: 12px;">放大字體</button>
+            </div>
+            <p class="subtitle" id="subtitle">照顧者智能助手</p>
+        </div>
+        
+        <div class="stats">
+            <div id="daily-hours">今日護理時數: 6.5/12 小時</div>
+            <div id="weekly-tasks">本週完成任務: 28/35</div>
+        </div>
+        
+        <div class="lang-bar">
+            <button class="lang-btn active" onclick="setLang('zh-HK')">繁中</button>
+            <button class="lang-btn" onclick="setLang('zh-CN')">简中</button>
+            <button class="lang-btn" onclick="setLang('en')">EN</button>
+            <button class="lang-btn" onclick="setLang('id')">ID</button>
+        </div>
+        
+        <div class="grid">
+            <div class="menu-item" onclick="showPanel('calendar')">
+                <div class="badge">3</div>
+                <div class="icon">📅</div>
+                <div class="menu-text" id="calendar-text">智能日曆</div>
+            </div>
+            <div class="menu-item" onclick="showPanel('medication')">
+                <div class="badge">2</div>
+                <div class="icon">💊</div>
+                <div class="menu-text" id="med-text">藥物管理</div>
+            </div>
+            <div class="menu-item" onclick="showPanel('monitoring')">
+                <div class="icon">📊</div>
+                <div class="menu-text" id="monitor-text">健康監測</div>
+            </div>
+            <div class="menu-item" onclick="showPanel('wellbeing')">
+                <div class="icon">❤️</div>
+                <div class="menu-text" id="well-text">身心健康</div>
+            </div>
+            <div class="menu-item" onclick="showPanel('collaboration')">
+                <div class="badge">⚠️</div>
+                <div class="icon">👥</div>
+                <div class="menu-text" id="collab-text">協作護理</div>
+            </div>
+            <div class="menu-item urgent emergency-btn" onclick="emergency()">
+                <div class="icon">🚨</div>
+                <div class="menu-text" id="emerg-text">緊急求助</div>
+            </div>
+            <div class="menu-item" onclick="showPanel('community')">
+                <div class="icon">🏥</div>
+                <div class="menu-text" id="comm-text">社區資源</div>
+            </div>
+            <div class="menu-item" onclick="showPanel('scan')">
+                <div class="icon">📷</div>
+                <div class="menu-text" id="scan-text">掃描預約</div>
+            </div>
+            <div class="menu-item" onclick="showPanel('gamification')">
+                <div class="icon">🏆</div>
+                <div class="menu-text" id="game-text">成就系統</div>
+            </div>
+        </div>
+
+        <!-- 智能日曆面板 -->
+        <div id="calendar-panel" class="demo-panel">
+            <div class="panel-header">
+                <h3 id="calendar-header">📅 智能日曆 & 提醒</h3>
+                <button class="back-btn" id="back-btn-1" onclick="hidePanel()">返回</button>
+            </div>
+            <div class="item-card item-urgent">
+                <strong id="appointment">🩺 覆診預約</strong><br>
+                <span id="tomorrow-cardio">明日 14:30 - 心臟科</span><br>
+                <small id="fasting-warning">⚠️ 需要禁食 8 小時，帶身份證及病歷</small><br>
+                <button class="btn btn-warning" id="set-reminder" onclick="setReminder()">設置提醒</button>
+            </div>
+            <div class="item-card">
+                <strong id="blood-sugar">💉 血糖測試</strong><br>
+                <span id="daily-times">每日 7:00, 12:00, 19:00</span><br>
+                <button class="btn btn-primary" id="record-reading" onclick="recordReading()">記錄讀數</button>
+            </div>
+            <div class="item-card">
+                <strong id="rehab-bus">🚐 復康巴士</strong><br>
+                <span id="wed-physio">週三 09:00 接送物理治療</span><br>
+                <button class="btn btn-success" id="confirm-booking" onclick="confirmTransport()">確認預約</button>
+            </div>
+        </div>
+
+        <!-- 藥物管理面板 -->
+        <div id="medication-panel" class="demo-panel">
+            <div class="panel-header">
+                <h3 id="med-header">💊 智能藥物管理</h3>
+                <button class="back-btn" id="back-btn-2" onclick="hidePanel()">返回</button>
+            </div>
+            <div class="item-card item-urgent">
+                <strong id="bp-med">降血壓藥 (Amlodipine)</strong><br>
+                <span id="bp-schedule">每日 8:00, 20:00 - <span style="color: red;">已逾時 30 分鐘</span></span><br>
+                <small id="crush-instruction">💡 需要壓碎服用，飯前服用</small><br>
+                <button class="btn btn-danger" id="take-now" onclick="markTaken('bp')">立即服用</button>
+            </div>
+            <div class="item-card">
+                <strong id="diabetes-med">糖尿病藥 (Metformin)</strong><br>
+                <span id="diabetes-schedule">每日 7:30, 19:30 - 下次: 19:30</span><br>
+                <small id="with-meal">🍽️ 與餐同服</small><br>
+                <button class="btn btn-primary" id="set-reminder-2" onclick="markTaken('diabetes')">設置提醒</button>
+            </div>
+            <div class="item-card item-done">
+                <strong id="vitamin-d">維他命 D</strong><br>
+                <span id="weekly-done">每週一次 - ✅ 已完成</span><br>
+                <small id="next-dose">下次服用: 下週一</small>
+            </div>
+        </div>
+
+        <!-- 健康監測面板 -->
+        <div id="monitoring-panel" class="demo-panel">
+            <div class="panel-header">
+                <h3 id="monitor-header">📊 自我監測 & AI 指導</h3>
+                <button class="back-btn" id="back-btn-3" onclick="hidePanel()">返回</button>
+            </div>
+            <div class="health-metric">
+                <span id="patient-bp">血壓 (患者)</span>
+                <span class="metric-value metric-warning">145/90 mmHg</span>
+            </div>
+            <div class="health-metric">
+                <span id="patient-sugar">血糖 (患者)</span>
+                <span class="metric-value metric-normal">6.2 mmol/L</span>
+            </div>
+            <div class="health-metric">
+                <span id="patient-weight">體重 (患者)</span>
+                <span class="metric-value metric-normal">65.2 kg</span>
+            </div>
+            <hr style="margin: 15px 0;">
+            <div class="health-metric">
+                <span id="caregiver-bp">照顧者血壓</span>
+                <span class="metric-value metric-danger">160/95 mmHg</span>
+            </div>
+            <div class="health-metric">
+                <span id="caregiver-sleep">照顧者睡眠</span>
+                <span class="metric-value metric-warning">4.5 小時</span>
+            </div>
+            <button class="btn btn-primary" id="ai-analysis" onclick="aiAnalysis()">🤖 AI 健康分析</button>
+            <button class="btn btn-warning" id="export-report" onclick="exportData()">📤 匯出報告</button>
+        </div>
+
+        <!-- 身心健康面板 -->
+        <div id="wellbeing-panel" class="demo-panel">
+            <div class="panel-header">
+                <h3 id="well-header">❤️ 身心健康支援</h3>
+                <button class="back-btn" id="back-btn-4" onclick="hidePanel()">返回</button>
+            </div>
+            <div class="item-card">
+                <strong id="mental-screening">📋 心理健康篩查</strong><br>
+                <span id="last-screening">上次: 2 週前 (輕度壓力)</span><br>
+                <button class="btn btn-primary" id="start-screening" onclick="mentalScreening()">開始篩查</button>
+            </div>
+            <div class="item-card">
+                <strong id="relaxation">🧘 放鬆練習</strong><br>
+                <span id="today-suggestion">今日建議: 太極 15 分鐘</span><br>
+                <button class="btn btn-success" id="start-practice" onclick="relaxation()">開始練習</button>
+            </div>
+            <div class="item-card">
+                <strong id="social-time">👥 社交時間</strong><br>
+                <span id="weekly-social">本週社交: 2 小時 (建議: 5 小時)</span><br>
+                <button class="btn btn-warning" id="arrange-social" onclick="socialReminder()">安排社交</button>
+            </div>
+            <div class="item-card">
+                <strong id="get-encouragement">💝 獲取鼓勵</strong><br>
+                <button class="btn btn-success" id="get-encouragement-btn" onclick="showQuote()">💝 獲取鼓勵</button>
+            </div>
+        </div>
+
+        <!-- 協作護理面板 -->
+        <div id="collaboration-panel" class="demo-panel">
+            <div class="panel-header">
+                <h3 id="collab-header">👥 多人協作護理</h3>
+                <button class="back-btn" id="back-btn-5" onclick="hidePanel()">返回</button>
+            </div>
+            
+            <!-- 壓力預警 -->
+            <div class="stress-alert">
+                <strong id="stress-warning">⚠️ 壓力預警</strong><br>
+                <span id="stress-alert-msg">陳太太連續工作 18 小時，壓力指數達到危險水平！</span><br>
+                <button class="btn btn-warning" id="offer-help" onclick="offerHelp('陳太太')" style="margin-top: 8px;">🤝 提供協助</button>
+            </div>
+            
+            <div class="caregiver-status status-critical">
+                <div class="user-avatar avatar-critical">媽</div>
+                <div style="flex: 1;">
+                    <strong id="main-caregiver">陳太太 (主要照顧者)</strong><br>
+                    <small id="work-sleep-status">連續工作: 18 小時 | 睡眠: 3 小時</small><br>
+                    <small id="mental-attention">心理健康: 需要關注</small>
+                </div>
+                <div class="stress-indicator stress-high" id="danger-level">危險</div>
+            </div>
+            
+            <div class="caregiver-status status-warning">
+                <div class="user-avatar avatar-warning">姐</div>
+                <div style="flex: 1;">
+                    <strong id="daughter">陳小姐 (女兒)</strong><br>
+                    <small id="daughter-status">本週: 25 小時 | 工作壓力: 中等</small><br>
+                    <small id="can-help-more">可增加 10 小時協助</small>
+                </div>
+                <div class="stress-indicator stress-medium" id="attention-level">注意</div>
+            </div>
+            
+            <div class="caregiver-status status-normal">
+                <div class="user-avatar avatar-normal">工</div>
+                <div style="flex: 1;">
+                    <strong id="helper">Maria (外傭)</strong><br>
+                    <small id="helper-status">本週: 30 小時 | 狀態: 良好</small><br>
+                    <small id="can-do-more">可承擔更多日常護理</small>
+                </div>
+                <div class="stress-indicator stress-low" id="normal-level">正常</div>
+            </div>
+            
+            <button class="btn btn-danger" id="emergency-shift" onclick="emergencyRotation()" style="width: 100%; margin: 10px 0;">
+                🚨 啟動緊急輪班
+            </button>
+            <button class="btn btn-primary" id="force-rest" onclick="scheduleBreak()" style="width: 100%;">
+                😴 安排強制休息
+            </button>
+        </div>
+
+        <!-- 社區資源面板 -->
+        <div id="community-panel" class="demo-panel">
+            <div class="panel-header">
+                <h3 id="comm-header">🏥 社區資源 (按地區)</h3>
+                <button class="back-btn" id="back-btn-6" onclick="hidePanel()">返回</button>
+            </div>
+            
+            <div class="district-selector">
+                <button class="district-btn active" id="ytm-district" onclick="selectDistrict('ytm')">油尖旺</button>
+                <button class="district-btn" id="ssp-district" onclick="selectDistrict('ssp')">深水埗</button>
+                <button class="district-btn" id="kc-district" onclick="selectDistrict('kc')">九龍城</button>
+                <button class="district-btn" id="wts-district" onclick="selectDistrict('wts')">黃大仙</button>
+                <button class="district-btn" id="kt-district" onclick="selectDistrict('kt')">觀塘</button>
+            </div>
+
+            <div id="district-resources">
+                <!-- 預設顯示油尖旺區資源 -->
+            </div>
+            
+            <div class="item-card" style="margin-top: 20px; background: #e8f5e8; border-left: 4px solid #34C759;">
+                <strong id="connect-caregivers">🤝 與社區內其他照顧者連結</strong><br>
+                <small>分享經驗、互相支援、建立聯繫</small><br>
+                <button class="btn btn-success" onclick="connectCaregivers()" style="margin-top: 8px;">🤝 加入照顧者網絡</button>
+            </div>
+        </div>
+
+        <!-- 掃描預約單面板 -->
+        <div id="scan-panel" class="demo-panel">
+            <div class="panel-header">
+                <h3 id="scan-header">📷 AI 智能掃描</h3>
+                <button class="back-btn" id="back-btn-7" onclick="hidePanel()">返回</button>
+            </div>
+            
+            <!-- 掃描類型選擇 -->
+            <div class="district-selector" style="margin-bottom: 20px;">
+                <button class="district-btn active" id="appointment-scan" onclick="setScanType('appointment')">預約單</button>
+                <button class="district-btn" id="medicine-scan" onclick="setScanType('medication')">藥袋標籤</button>
+            </div>
+            
+            <div class="scan-area" onclick="triggerCamera()">
+                <div class="icon">📷</div>
+                <p><strong id="scan-appointment">拍攝預約單</strong></p>
+                <p id="scan-support">支援醫院預約單、覆診紙、檢查通知</p>
+                <p id="click-to-scan" style="color: #666; font-size: 12px;">點擊開始拍攝</p>
+            </div>
+            
+            <input type="file" id="camera-input" accept="image/*" capture="camera" onchange="processImage(event)">
+            
+            <div id="scan-result" style="display: none;">
+                <h4>📋 掃描結果</h4>
+                <img id="scanned-image" class="scan-preview" style="display: none;">
+                
+                <div class="ocr-result">
+                    <strong>🤖 AI 識別結果:</strong>
+                    <div id="ocr-text"></div>
+                </div>
+                
+                <div id="extracted-data"></div>
+                
+                <div id="scan-actions">
+                    <!-- 動態按鈕會在這裡顯示 -->
+                </div>
+                
+                <button class="btn btn-primary" onclick="resetScan()">🔄 重新掃描</button>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
+                <h4 id="scan-tips">💡 掃描貼士</h4>
+                <ul style="font-size: 12px; color: #666; margin-left: 20px;">
+                    <li id="tip-1">確保預約單平整、光線充足</li>
+                    <li id="tip-2">避免反光和陰影</li>
+                    <li id="tip-3">支援繁體中文、英文預約單</li>
+                    <li id="tip-4">自動識別日期、時間、地點、科別</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 成就系統面板 -->
+        <div id="gamification-panel" class="demo-panel">
+            <div class="panel-header">
+                <h3 id="game-header">🏆 成就 & 激勵系統</h3>
+                <button class="back-btn" id="back-btn-8" onclick="hidePanel()">返回</button>
+            </div>
+            <div class="gamification">
+                <div><strong id="weekly-points">本週積分: 850 分</strong></div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 85%;"></div>
+                </div>
+                <div id="next-level">距離下一級別: 150 分</div>
+            </div>
+            <div class="item-card">
+                <strong id="recent-achievements">🏅 最近成就</strong><br>
+                <div class="achievement" id="med-streak">連續 7 天按時服藥</div>
+                <div class="achievement" id="stress-complete">完成壓力篩查</div>
+                <div class="achievement" id="collab-expert">協作護理達人</div>
+            </div>
+            <div class="item-card">
+                <strong id="community-joined">👥 已加入1個照顧者社群</strong><br>
+                <button class="btn btn-primary" id="join-community" onclick="joinCommunity()">加入社群</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 鼓勵 Quote 彈窗 -->
+    <div class="overlay" id="quote-overlay" onclick="closeQuote()"></div>
+    <div class="quote-popup" id="quote-popup">
+        <div class="quote-text" id="quote-text"></div>
+        <div class="quote-author" id="quote-author"></div>
+        <button class="quote-close" onclick="closeQuote()">💝 謝謝鼓勵</button>
+    </div>
+
+    <script>
+        const encouragingQuotes = {
+            'zh-HK': [
+                { text: "你的愛心和耐心，是家人最珍貴的禮物。每一個細心的照顧，都在創造無價的回憶。", author: "ConneCare 團隊", closeBtn: "💝 謝謝鼓勵" },
+                { text: "照顧他人是世界上最崇高的工作。你的付出，讓愛在家庭中流傳。", author: "護理專家", closeBtn: "💝 謝謝鼓勵" },
+                { text: "記住要照顧自己，只有健康的你，才能給家人最好的照顧。你值得被愛護。", author: "心理健康專家", closeBtn: "💝 謝謝鼓勵" },
+                { text: "每一天的堅持，都是愛的證明。你的努力，家人都看在眼裡，記在心裡。", author: "家庭治療師", closeBtn: "💝 謝謝鼓勵" }
+            ],
+            'zh-CN': [
+                { text: "你的爱心和耐心，是家人最珍贵的礼物。每一个细心的照护，都在创造无价的回忆。", author: "ConneCare 团队", closeBtn: "💝 谢谢鼓励" },
+                { text: "照护他人是世界上最崇高的工作。你的付出，让爱在家庭中流传。", author: "护理专家", closeBtn: "💝 谢谢鼓励" },
+                { text: "记住要照护自己，只有健康的你，才能给家人最好的照护。你值得被爱护。", author: "心理健康专家", closeBtn: "💝 谢谢鼓励" },
+                { text: "每一天的坚持，都是爱的证明。你的努力，家人都看在眼里，记在心里。", author: "家庭治疗师", closeBtn: "💝 谢谢鼓励" }
+            ],
+            'en': [
+                { text: "Your love and patience are the most precious gifts to your family. Every careful moment of care creates priceless memories.", author: "ConneCare Team", closeBtn: "💝 Thank You" },
+                { text: "Caring for others is the most noble work in the world. Your dedication spreads love throughout the family.", author: "Nursing Expert", closeBtn: "💝 Thank You" },
+                { text: "Remember to take care of yourself. Only a healthy you can give your family the best care. You deserve to be loved.", author: "Mental Health Expert", closeBtn: "💝 Thank You" },
+                { text: "Every day of persistence is proof of love. Your efforts are seen and remembered by your family.", author: "Family Therapist", closeBtn: "💝 Thank You" }
+            ],
+            'id': [
+                { text: "Cinta dan kesabaran Anda adalah hadiah paling berharga bagi keluarga. Setiap momen perawatan yang penuh perhatian menciptakan kenangan yang tak ternilai.", author: "Tim ConneCare", closeBtn: "💝 Terima Kasih" },
+                { text: "Merawat orang lain adalah pekerjaan paling mulia di dunia. Dedikasi Anda menyebarkan cinta di seluruh keluarga.", author: "Ahli Keperawatan", closeBtn: "💝 Terima Kasih" },
+                { text: "Ingatlah untuk merawat diri sendiri. Hanya Anda yang sehat yang dapat memberikan perawatan terbaik bagi keluarga. Anda layak dicintai.", author: "Ahli Kesehatan Mental", closeBtn: "💝 Terima Kasih" },
+                { text: "Setiap hari ketekunan adalah bukti cinta. Usaha Anda dilihat dan diingat oleh keluarga.", author: "Terapis Keluarga", closeBtn: "💝 Terima Kasih" }
+            ]
+        };
+
+        const districtResources = {
+            'ytm': {
+                name: '油尖旺區',
+                resources: [
+                    { type: '🏥', name: '廣華醫院', address: '窩打老道25號', distance: '1.2km', status: 'available', phone: '2332-2311', services: '急症室、專科門診' },
+                    { type: '🏠', name: '明愛油麻地長者中心', address: '油麻地東莞街45號', distance: '0.8km', status: 'available', phone: '2780-5577', services: '暫託服務、日間護理' },
+                    { type: '🚐', name: '復康巴士服務', address: '旺角服務站', distance: '1.5km', status: 'busy', phone: '2817-8154', services: '輪椅接送、醫院往返' }
+                ]
+            },
+            'ssp': {
+                name: '深水埗區',
+                resources: [
+                    { type: '🏥', name: '明愛醫院', address: '深水埗永康街111號', distance: '2.1km', status: 'available', phone: '3408-7911', services: '急症室、復康科' },
+                    { type: '🏠', name: '聖雅各福群會', address: '石硤尾邨', distance: '1.3km', status: 'full', phone: '2835-4321', services: '長者日間中心、暫託' }
+                ]
+            },
+            'kc': {
+                name: '九龍城區',
+                resources: [
+                    { type: '🏥', name: '伊利沙伯醫院', address: '加士居道30號', distance: '1.8km', status: 'busy', phone: '2958-8888', services: '急症室、專科' },
+                    { type: '🏠', name: '九龍城浸信會', address: '亞皆老街206號', distance: '1.0km', status: 'available', phone: '2711-2285', services: '長者服務、暫託' }
+                ]
+            },
+            'wts': {
+                name: '黃大仙區',
+                resources: [
+                    { type: '🏥', name: '東華三院黃大仙醫院', address: '沙田坳道124號', distance: '2.5km', status: 'available', phone: '2354-2333', services: '復康醫院、護理' },
+                    { type: '🏠', name: '黃大仙長者鄰舍中心', address: '龍翔道138號', distance: '1.2km', status: 'available', phone: '2327-2727', services: '日間護理、膳食' }
+                ]
+            },
+            'kt': {
+                name: '觀塘區',
+                resources: [
+                    { type: '🏥', name: '聯合醫院', address: '協和街130號', distance: '3.2km', status: 'available', phone: '2379-9441', services: '急症室、內科' },
+                    { type: '🏠', name: '基督教家庭服務中心', address: '觀塘道', distance: '2.1km', status: 'available', phone: '2348-3434', services: '家居照顧、暫託' }
+                ]
+            }
+        };
+
+        const mentalHealthQuestions = [
+            {
+                id: 'sleep',
+                question: '😴 最近一週你的睡眠質素如何？',
+                options: ['很好 (7-8小時)', '一般 (5-6小時)', '不好 (少於5小時)', '經常失眠'],
+                scores: [0, 1, 2, 3]
+            },
+            {
+                id: 'mood',
+                question: '😊 過去一週你的心情大多是？',
+                options: ['開心/平靜', '偶爾低落', '經常憂鬱', '持續沮喪'],
+                scores: [0, 1, 2, 3]
+            },
+            {
+                id: 'energy',
+                question: '⚡ 你的精神狀態如何？',
+                options: ['精力充沛', '有時疲倦', '經常疲勞', '完全沒力氣'],
+                scores: [0, 1, 2, 3]
+            }
+        ];
+
+        const translations = {
+            'zh-HK': {
+                subtitle: '照顧者智能助手',
+                'text-size-btn': '放大字體',
+                'daily-hours': '今日護理時數: 6.5/12 小時',
+                'weekly-tasks': '本週完成任務: 28/35',
+                'calendar-text': '智能日曆',
+                'med-text': '藥物管理',
+                'monitor-text': '健康監測',
+                'well-text': '身心健康',
+                'collab-text': '協作護理',
+                'comm-text': '社區資源',
+                'emerg-text': '緊急求助',
+                'scan-text': '掃描預約',
+                'game-text': '成就系統',
+                'connect-caregivers': '🤝 與社區內其他照顧者連結',
+                'calendar-header': '📅 智能日曆 & 提醒',
+                'med-header': '💊 智能藥物管理',
+                'monitor-header': '📊 自我監測 & AI 指導',
+                'well-header': '❤️ 身心健康支援',
+                'collab-header': '👥 多人協作護理',
+                'comm-header': '🏥 社區資源 (按地區)',
+                'scan-header': '📷 AI 智能掃描',
+                'game-header': '🏆 成就 & 激勵系統',
+                'community-joined': '👥 已加入1個照顧者社群',
+                'back-btn': '返回',
+                'appointment': '🩺 覆診預約',
+                'tomorrow-cardio': '明日 14:30 - 心臟科',
+                'fasting-warning': '⚠️ 需要禁食 8 小時，帶身份證及病歷',
+                'set-reminder': '設置提醒',
+                'blood-sugar': '💉 血糖測試',
+                'daily-times': '每日 7:00, 12:00, 19:00',
+                'record-reading': '記錄讀數',
+                'rehab-bus': '🚐 復康巴士',
+                'wed-physio': '週三 09:00 接送物理治療',
+                'confirm-booking': '確認預約',
+                'bp-med': '降血壓藥 (Amlodipine)',
+                'bp-schedule': '每日 8:00, 20:00 - 已逾時 30 分鐘',
+                'crush-instruction': '💡 需要壓碎服用，飯前服用',
+                'take-now': '立即服用',
+                'diabetes-med': '糖尿病藥 (Metformin)',
+                'diabetes-schedule': '每日 7:30, 19:30 - 下次: 19:30',
+                'with-meal': '🍽️ 與餐同服',
+                'vitamin-d': '維他命 D',
+                'weekly-done': '每週一次 - ✅ 已完成',
+                'next-dose': '下次服用: 下週一',
+                'patient-bp': '血壓 (患者)',
+                'patient-sugar': '血糖 (患者)',
+                'patient-weight': '體重 (患者)',
+                'caregiver-bp': '照顧者血壓',
+                'caregiver-sleep': '照顧者睡眠',
+                'ai-analysis': '🤖 AI 健康分析',
+                'export-report': '📤 匯出報告',
+                'mental-screening': '📋 心理健康篩查',
+                'last-screening': '上次: 2 週前 (輕度壓力)',
+                'start-screening': '開始篩查',
+                'relaxation': '🧘 放鬆練習',
+                'today-suggestion': '今日建議: 太極 15 分鐘',
+                'start-practice': '開始練習',
+                'social-time': '👥 社交時間',
+                'weekly-social': '本週社交: 2 小時 (建議: 5 小時)',
+                'arrange-social': '安排社交',
+                'get-encouragement': '💝 獲取鼓勵',
+                'stress-warning': '⚠️ 壓力預警',
+                'stress-alert-msg': '陳太太連續工作 18 小時，壓力指數達到危險水平！',
+                'offer-help': '🤝 提供協助',
+                'main-caregiver': '陳太太 (主要照顧者)',
+                'work-sleep-status': '連續工作: 18 小時 | 睡眠: 3 小時',
+                'mental-attention': '心理健康: 需要關注',
+                'danger-level': '危險',
+                'daughter': '陳小姐 (女兒)',
+                'daughter-status': '本週: 25 小時 | 工作壓力: 中等',
+                'can-help-more': '可增加 10 小時協助',
+                'attention-level': '注意',
+                'helper': 'Maria (外傭)',
+                'helper-status': '本週: 30 小時 | 狀態: 良好',
+                'can-do-more': '可承擔更多日常護理',
+                'normal-level': '正常',
+                'emergency-shift': '🚨 啟動緊急輪班',
+                'force-rest': '😴 安排強制休息',
+                'ytm-district': '油尖旺',
+                'ssp-district': '深水埗',
+                'kc-district': '九龍城',
+                'wts-district': '黃大仙',
+                'kt-district': '觀塘',
+                'ytm-resources': '油尖旺區資源',
+                'kwong-wah': '🏥 廣華醫院',
+                'kwong-wah-addr': '窩打老道25號',
+                'distance-1-2': '距離: 1.2km',
+                'emergency-specialist': '急症室、專科門診',
+                'available': '有空位',
+                'contact': '📞 聯絡',
+                'caritas-center': '🏠 明愛油麻地長者中心',
+                'caritas-addr': '油麻地東莞街45號',
+                'distance-0-8': '距離: 0.8km',
+                'respite-daycare': '暫託服務、日間護理',
+                'rehab-transport': '🚐 復康巴士服務',
+                'mk-station': '旺角服務站',
+                'distance-1-5': '距離: 1.5km',
+                'wheelchair-transport': '輪椅接送、醫院往返',
+                'busy': '繁忙',
+                'connect-desc': '分享經驗、互相支援、建立聯繫',
+                'join-network': '🤝 加入照顧者網絡',
+                'appointment-scan': '預約單',
+                'medicine-scan': '藥袋標籤',
+                'scan-appointment': '拍攝預約單',
+                'scan-support': '支援醫院預約單、覆診紙、檢查通知',
+                'click-to-scan': '點擊開始拍攝',
+                'scan-tips': '💡 掃描貼士',
+                'tip-1': '確保預約單平整、光線充足',
+                'tip-2': '避免反光和陰影',
+                'tip-3': '支援繁體中文、英文預約單',
+                'tip-4': '自動識別日期、時間、地點、科別',
+                'weekly-points': '本週積分: 850 分',
+                'next-level': '距離下一級別: 150 分',
+                'recent-achievements': '🏅 最近成就',
+                'med-streak': '連續 7 天按時服藥',
+                'stress-complete': '完成壓力篩查',
+                'collab-expert': '協作護理達人',
+                'join-community': '加入社群'
+            },
+            'zh-CN': {
+                subtitle: '照护者智能助手',
+                'text-size-btn': '放大字体',
+                'daily-hours': '今日护理时数: 6.5/12 小时',
+                'weekly-tasks': '本周完成任务: 28/35',
+                'calendar-text': '智能日历',
+                'med-text': '药物管理',
+                'monitor-text': '健康监测',
+                'well-text': '身心健康',
+                'collab-text': '协作护理',
+                'comm-text': '社区资源',
+                'emerg-text': '紧急求助',
+                'scan-text': '扫描预约',
+                'game-text': '成就系统',
+                'connect-caregivers': '🤝 与社区内其他照护者连接',
+                'calendar-header': '📅 智能日历 & 提醒',
+                'med-header': '💊 智能药物管理',
+                'monitor-header': '📊 自我监测 & AI 指导',
+                'well-header': '❤️ 身心健康支持',
+                'collab-header': '👥 多人协作护理',
+                'comm-header': '🏥 社区资源 (按地区)',
+                'scan-header': '📷 AI 智能扫描',
+                'game-header': '🏆 成就 & 激励系统',
+                'community-joined': '👥 已加入1个照护者社群',
+                'back-btn': '返回',
+                'appointment': '🩺 复诊预约',
+                'tomorrow-cardio': '明日 14:30 - 心脏科',
+                'fasting-warning': '⚠️ 需要禁食 8 小时，带身份证及病历',
+                'set-reminder': '设置提醒',
+                'blood-sugar': '💉 血糖测试',
+                'daily-times': '每日 7:00, 12:00, 19:00',
+                'record-reading': '记录读数',
+                'rehab-bus': '🚐 康复巴士',
+                'wed-physio': '周三 09:00 接送物理治疗',
+                'confirm-booking': '确认预约',
+                'bp-med': '降血压药 (Amlodipine)',
+                'bp-schedule': '每日 8:00, 20:00 - 已逾时 30 分钟',
+                'crush-instruction': '💡 需要压碎服用，饭前服用',
+                'take-now': '立即服用',
+                'diabetes-med': '糖尿病药 (Metformin)',
+                'diabetes-schedule': '每日 7:30, 19:30 - 下次: 19:30',
+                'with-meal': '🍽️ 与餐同服',
+                'vitamin-d': '维他命 D',
+                'weekly-done': '每周一次 - ✅ 已完成',
+                'next-dose': '下次服用: 下周一',
+                'patient-bp': '血压 (患者)',
+                'patient-sugar': '血糖 (患者)',
+                'patient-weight': '体重 (患者)',
+                'caregiver-bp': '照护者血压',
+                'caregiver-sleep': '照护者睡眠',
+                'ai-analysis': '🤖 AI 健康分析',
+                'export-report': '📤 导出报告',
+                'mental-screening': '📋 心理健康筛查',
+                'last-screening': '上次: 2 周前 (轻度压力)',
+                'start-screening': '开始筛查',
+                'relaxation': '🧘 放松练习',
+                'today-suggestion': '今日建议: 太极 15 分钟',
+                'start-practice': '开始练习',
+                'social-time': '👥 社交时间',
+                'weekly-social': '本周社交: 2 小时 (建议: 5 小时)',
+                'arrange-social': '安排社交',
+                'get-encouragement': '💝 获取鼓励',
+                'stress-warning': '⚠️ 压力预警',
+                'stress-alert-msg': '陈太太连续工作 18 小时，压力指数达到危险水平！',
+                'offer-help': '🤝 提供协助',
+                'main-caregiver': '陈太太 (主要照护者)',
+                'work-sleep-status': '连续工作: 18 小时 | 睡眠: 3 小时',
+                'mental-attention': '心理健康: 需要关注',
+                'danger-level': '危险',
+                'daughter': '陈小姐 (女儿)',
+                'daughter-status': '本周: 25 小时 | 工作压力: 中等',
+                'can-help-more': '可增加 10 小时协助',
+                'attention-level': '注意',
+                'helper': 'Maria (外佣)',
+                'helper-status': '本周: 30 小时 | 状态: 良好',
+                'can-do-more': '可承担更多日常护理',
+                'normal-level': '正常',
+                'emergency-shift': '🚨 启动紧急轮班',
+                'force-rest': '😴 安排强制休息',
+                'ytm-district': '油尖旺',
+                'ssp-district': '深水埗',
+                'kc-district': '九龙城',
+                'wts-district': '黄大仙',
+                'kt-district': '观塘',
+                'ytm-resources': '油尖旺区资源',
+                'kwong-wah': '🏥 广华医院',
+                'kwong-wah-addr': '窝打老道25号',
+                'distance-1-2': '距离: 1.2km',
+                'emergency-specialist': '急诊室、专科门诊',
+                'available': '有空位',
+                'contact': '📞 联络',
+                'caritas-center': '🏠 明爱油麻地长者中心',
+                'caritas-addr': '油麻地东莞街45号',
+                'distance-0-8': '距离: 0.8km',
+                'respite-daycare': '暂托服务、日间护理',
+                'rehab-transport': '🚐 康复巴士服务',
+                'mk-station': '旺角服务站',
+                'distance-1-5': '距离: 1.5km',
+                'wheelchair-transport': '轮椅接送、医院往返',
+                'busy': '繁忙',
+                'connect-desc': '分享经验、互相支持、建立联系',
+                'join-network': '🤝 加入照护者网络',
+                'appointment-scan': '预约单',
+                'medicine-scan': '药袋标签',
+                'scan-appointment': '拍摄预约单',
+                'scan-support': '支持医院预约单、复诊纸、检查通知',
+                'click-to-scan': '点击开始拍摄',
+                'scan-tips': '💡 扫描贴士',
+                'tip-1': '确保预约单平整、光线充足',
+                'tip-2': '避免反光和阴影',
+                'tip-3': '支持繁体中文、英文预约单',
+                'tip-4': '自动识别日期、时间、地点、科别',
+                'weekly-points': '本周积分: 850 分',
+                'next-level': '距离下一级别: 150 分',
+                'recent-achievements': '🏅 最近成就',
+                'med-streak': '连续 7 天按时服药',
+                'stress-complete': '完成压力筛查',
+                'collab-expert': '协作护理达人',
+                'join-community': '加入社群'
+            },
+            'en': {
+                subtitle: 'Intelligent Caregiver Assistant',
+                'text-size-btn': 'Enlarge Text',
+                'daily-hours': 'Today\'s Care Hours: 6.5/12 hours',
+                'weekly-tasks': 'Weekly Tasks Completed: 28/35',
+                'calendar-text': 'Smart Calendar',
+                'med-text': 'Medication',
+                'monitor-text': 'Health Monitor',
+                'well-text': 'Well-being',
+                'collab-text': 'Collaboration',
+                'comm-text': 'Community',
+                'emerg-text': 'Emergency',
+                'scan-text': 'OCR Scan',
+                'game-text': 'Achievements',
+                'connect-caregivers': '🤝 Connect with other caregivers in your community',
+                'calendar-header': '📅 Smart Calendar & Reminders',
+                'med-header': '💊 Intelligent Medication Management',
+                'monitor-header': '📊 Self-Monitoring & AI Guidance',
+                'well-header': '❤️ Mental & Physical Health Support',
+                'collab-header': '👥 Multi-Person Collaborative Care',
+                'comm-header': '🏥 Community Resources (By District)',
+                'scan-header': '📷 AI Intelligent Scanning',
+                'game-header': '🏆 Achievement & Motivation System',
+                'community-joined': '👥 Joined 1 Caregiver Community',
+                'back-btn': 'Back',
+                'appointment': '🩺 Follow-up Appointment',
+                'tomorrow-cardio': 'Tomorrow 14:30 - Cardiology',
+                'fasting-warning': '⚠️ Fasting required for 8 hours, bring ID and medical records',
+                'set-reminder': 'Set Reminder',
+                'blood-sugar': '💉 Blood Sugar Test',
+                'daily-times': 'Daily 7:00, 12:00, 19:00',
+                'record-reading': 'Record Reading',
+                'rehab-bus': '🚐 Rehabilitation Bus',
+                'wed-physio': 'Wednesday 09:00 Physiotherapy Transport',
+                'confirm-booking': 'Confirm Booking',
+                'bp-med': 'Blood Pressure Medicine (Amlodipine)',
+                'bp-schedule': 'Daily 8:00, 20:00 - Overdue 30 minutes',
+                'crush-instruction': '💡 Crush before taking, take before meals',
+                'take-now': 'Take Now',
+                'diabetes-med': 'Diabetes Medicine (Metformin)',
+                'diabetes-schedule': 'Daily 7:30, 19:30 - Next: 19:30',
+                'with-meal': '🍽️ Take with meals',
+                'vitamin-d': 'Vitamin D',
+                'weekly-done': 'Weekly - ✅ Completed',
+                'next-dose': 'Next dose: Next Monday',
+                'patient-bp': 'Blood Pressure (Patient)',
+                'patient-sugar': 'Blood Sugar (Patient)',
+                'patient-weight': 'Weight (Patient)',
+                'caregiver-bp': 'Caregiver Blood Pressure',
+                'caregiver-sleep': 'Caregiver Sleep',
+                'ai-analysis': '🤖 AI Health Analysis',
+                'export-report': '📤 Export Report',
+                'mental-screening': '📋 Mental Health Screening',
+                'last-screening': 'Last: 2 weeks ago (Mild stress)',
+                'start-screening': 'Start Screening',
+                'relaxation': '🧘 Relaxation Exercise',
+                'today-suggestion': 'Today\'s suggestion: Tai Chi 15 minutes',
+                'start-practice': 'Start Practice',
+                'social-time': '👥 Social Time',
+                'weekly-social': 'Weekly social: 2 hours (Recommended: 5 hours)',
+                'arrange-social': 'Arrange Social',
+                'get-encouragement': '💝 Get Encouragement',
+                'stress-warning': '⚠️ Stress Warning',
+                'stress-alert-msg': 'Mrs. Chen has worked 18 hours straight, stress level is dangerous!',
+                'offer-help': '🤝 Offer Help',
+                'main-caregiver': 'Mrs. Chen (Primary Caregiver)',
+                'work-sleep-status': 'Continuous work: 18 hours | Sleep: 3 hours',
+                'mental-attention': 'Mental health: Needs attention',
+                'danger-level': 'Danger',
+                'daughter': 'Miss Chen (Daughter)',
+                'daughter-status': 'This week: 25 hours | Work stress: Moderate',
+                'can-help-more': 'Can provide 10 more hours of help',
+                'attention-level': 'Attention',
+                'helper': 'Maria (Helper)',
+                'helper-status': 'This week: 30 hours | Status: Good',
+                'can-do-more': 'Can take on more daily care',
+                'normal-level': 'Normal',
+                'emergency-shift': '🚨 Activate Emergency Shift',
+                'force-rest': '😴 Arrange Mandatory Rest',
+                'ytm-district': 'Yau Tsim Mong',
+                'ssp-district': 'Sham Shui Po',
+                'kc-district': 'Kowloon City',
+                'wts-district': 'Wong Tai Sin',
+                'kt-district': 'Kwun Tong',
+                'ytm-resources': 'Yau Tsim Mong District Resources',
+                'kwong-wah': '🏥 Kwong Wah Hospital',
+                'kwong-wah-addr': '25 Waterloo Road',
+                'distance-1-2': 'Distance: 1.2km',
+                'emergency-specialist': 'Emergency, Specialist Clinics',
+                'available': 'Available',
+                'contact': '📞 Contact',
+                'caritas-center': '🏠 Caritas Yau Ma Tei Elderly Centre',
+                'caritas-addr': '45 Tung Kun Street, Yau Ma Tei',
+                'distance-0-8': 'Distance: 0.8km',
+                'respite-daycare': 'Respite service, Day care',
+                'rehab-transport': '🚐 Rehabilitation Transport Service',
+                'mk-station': 'Mong Kok Station',
+                'distance-1-5': 'Distance: 1.5km',
+                'wheelchair-transport': 'Wheelchair transport, Hospital transfers',
+                'busy': 'Busy',
+                'connect-desc': 'Share experiences, mutual support, build connections',
+                'join-network': '🤝 Join Caregiver Network',
+                'appointment-scan': 'Appointment Card',
+                'medicine-scan': 'Medicine Label',
+                'scan-appointment': 'Scan Appointment Card',
+                'scan-support': 'Supports hospital appointments, follow-up papers, test notifications',
+                'click-to-scan': 'Click to start scanning',
+                'scan-tips': '💡 Scanning Tips',
+                'tip-1': 'Ensure appointment card is flat with good lighting',
+                'tip-2': 'Avoid reflections and shadows',
+                'tip-3': 'Supports Traditional Chinese and English appointment cards',
+                'tip-4': 'Auto-recognizes date, time, location, department',
+                'weekly-points': 'Weekly points: 850 points',
+                'next-level': 'To next level: 150 points',
+                'recent-achievements': '🏅 Recent Achievements',
+                'med-streak': '7 days medication streak',
+                'stress-complete': 'Completed stress screening',
+                'collab-expert': 'Collaborative care expert',
+                'join-community': 'Join Community'
+            },
+            'id': {
+                subtitle: 'Asisten Cerdas Pengasuh',
+                'text-size-btn': 'Perbesar Teks',
+                'daily-hours': 'Jam Perawatan Hari Ini: 6.5/12 jam',
+                'weekly-tasks': 'Tugas Mingguan Selesai: 28/35',
+                'calendar-text': 'Kalender Pintar',
+                'med-text': 'Manajemen Obat',
+                'monitor-text': 'Monitor Kesehatan',
+                'well-text': 'Kesejahteraan',
+                'collab-text': 'Kolaborasi',
+                'comm-text': 'Komunitas',
+                'emerg-text': 'Darurat',
+                'scan-text': 'Pindai OCR',
+                'game-text': 'Pencapaian',
+                'connect-caregivers': '🤝 Terhubung dengan pengasuh lain di komunitas Anda',
+                'calendar-header': '📅 Kalender Pintar & Pengingat',
+                'med-header': '💊 Manajemen Obat Cerdas',
+                'monitor-header': '📊 Pemantauan Mandiri & Panduan AI',
+                'well-header': '❤️ Dukungan Kesehatan Mental & Fisik',
+                'collab-header': '👥 Perawatan Kolaboratif Multi-Orang',
+                'comm-header': '🏥 Sumber Daya Komunitas (Berdasarkan Distrik)',
+                'scan-header': '📷 Pemindaian AI Cerdas',
+                'game-header': '🏆 Sistem Pencapaian & Motivasi',
+                'community-joined': '👥 Bergabung dengan 1 Komunitas Pengasuh',
+                'back-btn': 'Kembali',
+                'appointment': '🩺 Janji Temu Lanjutan',
+                'tomorrow-cardio': 'Besok 14:30 - Kardiologi',
+                'fasting-warning': '⚠️ Puasa 8 jam diperlukan, bawa KTP dan rekam medis',
+                'set-reminder': 'Atur Pengingat',
+                'blood-sugar': '💉 Tes Gula Darah',
+                'daily-times': 'Harian 7:00, 12:00, 19:00',
+                'record-reading': 'Catat Pembacaan',
+                'rehab-bus': '🚐 Bus Rehabilitasi',
+                'wed-physio': 'Rabu 09:00 Transportasi Fisioterapi',
+                'confirm-booking': 'Konfirmasi Booking',
+                'bp-med': 'Obat Tekanan Darah (Amlodipine)',
+                'bp-schedule': 'Harian 8:00, 20:00 - Terlambat 30 menit',
+                'crush-instruction': '💡 Hancurkan sebelum diminum, minum sebelum makan',
+                'take-now': 'Minum Sekarang',
+                'diabetes-med': 'Obat Diabetes (Metformin)',
+                'diabetes-schedule': 'Harian 7:30, 19:30 - Berikutnya: 19:30',
+                'with-meal': '🍽️ Minum bersama makanan',
+                'vitamin-d': 'Vitamin D',
+                'weekly-done': 'Mingguan - ✅ Selesai',
+                'next-dose': 'Dosis berikutnya: Senin depan',
+                'patient-bp': 'Tekanan Darah (Pasien)',
+                'patient-sugar': 'Gula Darah (Pasien)',
+                'patient-weight': 'Berat Badan (Pasien)',
+                'caregiver-bp': 'Tekanan Darah Pengasuh',
+                'caregiver-sleep': 'Tidur Pengasuh',
+                'ai-analysis': '🤖 Analisis Kesehatan AI',
+                'export-report': '📤 Ekspor Laporan',
+                'mental-screening': '📋 Skrining Kesehatan Mental',
+                'last-screening': 'Terakhir: 2 minggu lalu (Stres ringan)',
+                'start-screening': 'Mulai Skrining',
+                'relaxation': '🧘 Latihan Relaksasi',
+                'today-suggestion': 'Saran hari ini: Tai Chi 15 menit',
+                'start-practice': 'Mulai Latihan',
+                'social-time': '👥 Waktu Sosial',
+                'weekly-social': 'Sosial mingguan: 2 jam (Disarankan: 5 jam)',
+                'arrange-social': 'Atur Sosial',
+                'get-encouragement': '💝 Dapatkan Dorongan',
+                'stress-warning': '⚠️ Peringatan Stres',
+                'stress-alert-msg': 'Nyonya Chen telah bekerja 18 jam berturut-turut, tingkat stres berbahaya!',
+                'offer-help': '🤝 Tawarkan Bantuan',
+                'main-caregiver': 'Nyonya Chen (Pengasuh Utama)',
+                'work-sleep-status': 'Kerja terus-menerus: 18 jam | Tidur: 3 jam',
+                'mental-attention': 'Kesehatan mental: Perlu perhatian',
+                'danger-level': 'Bahaya',
+                'daughter': 'Nona Chen (Anak perempuan)',
+                'daughter-status': 'Minggu ini: 25 jam | Stres kerja: Sedang',
+                'can-help-more': 'Dapat memberikan 10 jam bantuan lebih',
+                'attention-level': 'Perhatian',
+                'helper': 'Maria (Pembantu)',
+                'helper-status': 'Minggu ini: 30 jam | Status: Baik',
+                'can-do-more': 'Dapat mengambil lebih banyak perawatan harian',
+                'normal-level': 'Normal',
+                'emergency-shift': '🚨 Aktifkan Shift Darurat',
+                'force-rest': '😴 Atur Istirahat Wajib',
+                'ytm-district': 'Yau Tsim Mong',
+                'ssp-district': 'Sham Shui Po',
+                'kc-district': 'Kowloon City',
+                'wts-district': 'Wong Tai Sin',
+                'kt-district': 'Kwun Tong',
+                'ytm-resources': 'Sumber Daya Distrik Yau Tsim Mong',
+                'kwong-wah': '🏥 Rumah Sakit Kwong Wah',
+                'kwong-wah-addr': '25 Waterloo Road',
+                'distance-1-2': 'Jarak: 1.2km',
+                'emergency-specialist': 'Darurat, Klinik Spesialis',
+                'available': 'Tersedia',
+                'contact': '📞 Kontak',
+                'caritas-center': '🏠 Pusat Lansia Caritas Yau Ma Tei',
+                'caritas-addr': '45 Tung Kun Street, Yau Ma Tei',
+                'distance-0-8': 'Jarak: 0.8km',
+                'respite-daycare': 'Layanan respite, Perawatan siang',
+                'rehab-transport': '🚐 Layanan Transportasi Rehabilitasi',
+                'mk-station': 'Stasiun Mong Kok',
+                'distance-1-5': 'Jarak: 1.5km',
+                'wheelchair-transport': 'Transportasi kursi roda, Transfer rumah sakit',
+                'busy': 'Sibuk',
+                'connect-desc': 'Berbagi pengalaman, saling mendukung, membangun koneksi',
+                'join-network': '🤝 Bergabung dengan Jaringan Pengasuh',
+                'appointment-scan': 'Kartu Janji Temu',
+                'medicine-scan': 'Label Obat',
+                'scan-appointment': 'Pindai Kartu Janji Temu',
+                'scan-support': 'Mendukung janji temu rumah sakit, kertas tindak lanjut, notifikasi tes',
+                'click-to-scan': 'Klik untuk mulai memindai',
+                'scan-tips': '💡 Tips Pemindaian',
+                'tip-1': 'Pastikan kartu janji temu rata dengan pencahayaan yang baik',
+                'tip-2': 'Hindari pantulan dan bayangan',
+                'tip-3': 'Mendukung kartu janji temu Cina Tradisional dan Inggris',
+                'tip-4': 'Mengenali otomatis tanggal, waktu, lokasi, departemen',
+                'weekly-points': 'Poin mingguan: 850 poin',
+                'next-level': 'Ke level berikutnya: 150 poin',
+                'recent-achievements': '🏅 Pencapaian Terbaru',
+                'med-streak': 'Streak obat 7 hari',
+                'stress-complete': 'Menyelesaikan skrining stres',
+                'collab-expert': 'Ahli perawatan kolaboratif',
+                'join-community': 'Bergabung dengan Komunitas'
+            }
+        };
+
+        let lastQuoteDate = null;
+        let currentScanType = 'appointment';
+        let isTextEnlarged = false;
+        let chatbotState = {
+            currentQuestion: 0,
+            responses: {},
+            isActive: false,
+            lastScreeningDate: null
+        };
+        
+        function toggleTextSize() {
+            isTextEnlarged = !isTextEnlarged;
+            if (isTextEnlarged) {
+                document.body.classList.add('enlarged-text');
+            } else {
+                document.body.classList.remove('enlarged-text');
+            }
+        }
+        
+        function setLang(lang) {
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const translation = translations[lang];
+            if (translation) {
+                Object.keys(translation).forEach(key => {
+                    const element = document.getElementById(key);
+                    if (element) {
+                        if (key.includes('daily-hours') || key.includes('weekly-tasks')) {
+                            element.innerHTML = translation[key];
+                        } else {
+                            element.textContent = translation[key];
+                        }
+                    }
+                });
+                
+                // Update all back buttons
+                for (let i = 1; i <= 8; i++) {
+                    const backBtn = document.getElementById(`back-btn-${i}`);
+                    if (backBtn) {
+                        backBtn.textContent = translation['back-btn'];
+                    }
+                }
+                
+                // Update set-reminder-2 button
+                const setReminder2 = document.getElementById('set-reminder-2');
+                if (setReminder2) {
+                    setReminder2.textContent = translation['set-reminder'];
+                }
+                
+                // Update get-encouragement-btn button
+                const getEncouragementBtn = document.getElementById('get-encouragement-btn');
+                if (getEncouragementBtn) {
+                    getEncouragementBtn.textContent = translation['get-encouragement'];
+                }
+                
+                // Update join-community button
+                const joinCommunityBtn = document.getElementById('join-community');
+                if (joinCommunityBtn) {
+                    joinCommunityBtn.textContent = translation['join-community'];
+                }
+            }
+        }
+        
+        function showPanel(type) {
+            document.querySelectorAll('.demo-panel').forEach(p => p.style.display = 'none');
+            document.getElementById(type + '-panel').style.display = 'block';
+            
+            if (type === 'community') {
+                selectDistrict('ytm');
+            }
+        }
+        
+        function hidePanel() {
+            document.querySelectorAll('.demo-panel').forEach(p => p.style.display = 'none');
+        }
+
+        function selectDistrict(districtCode) {
+            document.querySelectorAll('.district-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const currentLang = document.querySelector('.lang-btn.active').textContent === '繁中' ? 'zh-HK' : 
+                              document.querySelector('.lang-btn.active').textContent === '简中' ? 'zh-CN' :
+                              document.querySelector('.lang-btn.active').textContent === 'EN' ? 'en' : 'id';
+            
+            const district = districtResources[currentLang][districtCode];
+            const resourcesDiv = document.getElementById('district-resources');
+            
+            let html = `<h4>${district.name}</h4>`;
+            
+            district.resources.forEach(resource => {
+                const statusClass = resource.status === '有空位' || resource.status === 'Available' || resource.status === 'Tersedia' ? 'status-available' : 
+                                  resource.status === '繁忙' || resource.status === 'Busy' || resource.status === 'Sibuk' ? 'status-busy' : 'status-full';
+                
+                html += `
+                    <div class="resource-item">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div>
+                                <strong>${resource.type} ${resource.name}</strong><br>
+                                <small>${resource.address}</small><br>
+                                <small style="color: #666;">${resource.distance}</small><br>
+                                <small>${resource.services}</small>
+                            </div>
+                            <div style="text-align: right;">
+                                <div class="status ${statusClass}">${resource.status}</div>
+                                <button onclick="contactResource('${resource.name}', '${resource.phone}')" 
+                                        style="margin-top: 5px; padding: 4px 8px; border: none; border-radius: 3px; background: #007AFF; color: white; cursor: pointer; font-size: 11px;">
+                                    📞 ${currentLang === 'zh-HK' ? '聯絡' : currentLang === 'zh-CN' ? '联络' : currentLang === 'en' ? 'Contact' : 'Kontak'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                <div class="item-card" style="margin-top: 20px; background: #e8f5e8; border-left: 4px solid #34C759;">
+                    <strong>${translations[currentLang]['connect-caregivers']}</strong><br>
+                    <small>${translations[currentLang]['connect-desc']}</small><br>
+                    <button class="btn btn-success" onclick="connectCaregivers()" style="margin-top: 8px;">${translations[currentLang]['join-network']}</button>
+                </div>
+            `;
+            
+            resourcesDiv.innerHTML = html;
+        }
+
+        function setScanType(type) {
+            currentScanType = type;
+            document.querySelectorAll('.district-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (type === 'appointment') {
+                document.getElementById('scan-title').textContent = '拍攝預約單';
+                document.getElementById('scan-description').textContent = '支援醫院預約單、覆診紙、檢查通知';
+                document.getElementById('scan-tips').innerHTML = `
+                    <li>確保預約單平整、光線充足</li>
+                    <li>避免反光和陰影</li>
+                    <li>支援繁體中文、英文預約單</li>
+                    <li>自動識別日期、時間、地點、科別</li>
+                `;
+            } else {
+                document.getElementById('scan-title').textContent = '拍攝藥袋標籤';
+                document.getElementById('scan-description').textContent = '支援醫院藥袋、私家診所藥袋';
+                document.getElementById('scan-tips').innerHTML = `
+                    <li>確保藥袋標籤清晰可見</li>
+                    <li>包含藥物名稱和服用指示</li>
+                    <li>支援中英文藥袋標籤</li>
+                    <li>自動設置服藥提醒</li>
+                `;
+            }
+        }
+
+        function triggerCamera() {
+            document.getElementById('camera-input').click();
+        }
+
+        function processImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('scanned-image').src = e.target.result;
+                document.getElementById('scanned-image').style.display = 'block';
+                document.getElementById('scan-result').style.display = 'block';
+                
+                // 模擬 OCR 處理
+                setTimeout(() => {
+                    simulateOCR();
+                }, 1500);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function simulateOCR() {
+            if (currentScanType === 'appointment') {
+                document.getElementById('ocr-text').innerHTML = `
+                    香港廣華醫院<br>
+                    心臟科專科門診<br>
+                    預約日期: 2024年1月15日<br>
+                    預約時間: 下午2:30<br>
+                    地點: 3樓心臟科<br>
+                    醫生: 陳醫生<br>
+                    注意事項: 請禁食8小時
+                `;
+                
+                document.getElementById('extracted-data').innerHTML = `
+                    <div class="extracted-info">
+                        <strong>📅 已提取資訊:</strong><br>
+                        • 日期: 2024年1月15日 (明日)<br>
+                        • 時間: 14:30<br>
+                        • 地點: 廣華醫院 3樓心臟科<br>
+                        • 醫生: 陳醫生<br>
+                        • 特別指示: 禁食8小時
+                    </div>
+                `;
+                
+                document.getElementById('scan-actions').innerHTML = `
+                    <button class="btn btn-success" onclick="addToCalendar()">📅 加入日曆</button>
+                    <button class="btn btn-warning" onclick="setPreReminder()">⏰ 設置提醒</button>
+                    <button class="btn btn-primary" onclick="shareWithFamily()">👥 分享家人</button>
+                `;
+            } else {
+                document.getElementById('ocr-text').innerHTML = `
+                    廣華醫院藥房<br>
+                    藥物名稱: Amlodipine 5mg<br>
+                    服用方法: 每日一次，飯前服用<br>
+                    數量: 30粒<br>
+                    注意事項: 需要壓碎服用
+                `;
+                
+                document.getElementById('extracted-data').innerHTML = `
+                    <div class="extracted-info">
+                        <strong>💊 已提取資訊:</strong><br>
+                        • 藥名: Amlodipine 5mg (降血壓藥)<br>
+                        • 服法: 每日一次，飯前服用<br>
+                        • 數量: 30粒 (30天份)<br>
+                        • 特殊指示: 需要壓碎服用
+                    </div>
+                `;
+                
+                document.getElementById('scan-actions').innerHTML = `
+                    <button class="btn btn-success" onclick="addMedication()">💊 加入藥物清單</button>
+                    <button class="btn btn-warning" onclick="setMedReminder()">⏰ 設置服藥提醒</button>
+                    <button class="btn btn-primary" onclick="checkInteractions()">⚠️ 檢查藥物相互作用</button>
+                `;
+            }
+        }
+
+        function resetScan() {
+            document.getElementById('scan-result').style.display = 'none';
+            document.getElementById('camera-input').value = '';
+        }
+
+        function showQuote() {
+            const today = new Date().toDateString();
+            if (lastQuoteDate === today) {
+                const currentLang = document.querySelector('.lang-btn.active').textContent === '繁中' ? 'zh-HK' : 
+                                  document.querySelector('.lang-btn.active').textContent === '简中' ? 'zh-CN' :
+                                  document.querySelector('.lang-btn.active').textContent === 'EN' ? 'en' : 'id';
+                const limitMessages = {
+                    'zh-HK': '💝 今日已獲得鼓勵\n\n為避免過度通知，每日限制一次鼓勵訊息\n\n明日再來獲取新的鼓勵吧！',
+                    'zh-CN': '💝 今日已获得鼓励\n\n为避免过度通知，每日限制一次鼓励消息\n\n明日再来获取新的鼓励吧！',
+                    'en': '💝 Already received encouragement today\n\nTo avoid excessive notifications, encouragement is limited to once per day\n\nCome back tomorrow for new encouragement!',
+                    'id': '💝 Sudah menerima dorongan hari ini\n\nUntuk menghindari notifikasi berlebihan, dorongan dibatasi sekali per hari\n\nKembali besok untuk dorongan baru!'
+                };
+                alert(limitMessages[currentLang]);
+                return;
+            }
+            
+            const currentLang = document.querySelector('.lang-btn.active').textContent === '繁中' ? 'zh-HK' : 
+                              document.querySelector('.lang-btn.active').textContent === '简中' ? 'zh-CN' :
+                              document.querySelector('.lang-btn.active').textContent === 'EN' ? 'en' : 'id';
+            
+            const quotes = encouragingQuotes[currentLang];
+            const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+            
+            document.getElementById('quote-text').textContent = randomQuote.text;
+            document.getElementById('quote-author').textContent = `— ${randomQuote.author}`;
+            document.querySelector('.quote-close').textContent = randomQuote.closeBtn;
+            document.getElementById('quote-overlay').style.display = 'block';
+            document.getElementById('quote-popup').style.display = 'block';
+            
+            lastQuoteDate = today;
+        }
+
+        function closeQuote() {
+            document.getElementById('quote-overlay').style.display = 'none';
+            document.getElementById('quote-popup').style.display = 'none';
+        }
+
+        function mentalScreening() {
+            const today = new Date();
+            const lastWeek = chatbotState.lastScreeningDate ? 
+                new Date(chatbotState.lastScreeningDate) : new Date(0);
+            const daysDiff = (today - lastWeek) / (1000 * 60 * 60 * 24);
+            
+            if (daysDiff < 7) {
+                alert(`📋 心理健康篩查\n\n你在 ${Math.ceil(7-daysDiff)} 天前已完成篩查\n\n上次結果: 輕度壓力\n建議: 保持規律作息\n\n下次篩查: ${Math.ceil(7-daysDiff)} 天後`);
+                return;
+            }
+            
+            startChatbotScreening();
+        }
+
+        function startChatbotScreening() {
+            chatbotState.isActive = true;
+            chatbotState.currentQuestion = 0;
+            chatbotState.responses = {};
+            
+            showChatbotQuestion();
+        }
+
+        function showChatbotQuestion() {
+            if (chatbotState.currentQuestion >= mentalHealthQuestions.length) {
+                completeChatbotScreening();
+                return;
+            }
+            
+            const question = mentalHealthQuestions[chatbotState.currentQuestion];
+            
+            let optionsHtml = '';
+            question.options.forEach((option, index) => {
+                optionsHtml += `
+                    <button onclick="answerChatbotQuestion(${index})" 
+                            style="display: block; width: 100%; margin: 5px 0; padding: 10px; 
+                                   border: 1px solid #ddd; border-radius: 5px; background: white; 
+                                   cursor: pointer; text-align: left;">
+                        ${option}
+                    </button>
+                `;
+            });
+            
+            const chatbotHtml = `
+                <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                            background: white; padding: 25px; border-radius: 15px; 
+                            box-shadow: 0 10px 30px rgba(0,0,0,0.3); max-width: 350px; 
+                            z-index: 1000;">
+                    <h4>🤖 ConneCare 關懷助手</h4>
+                    <p style="margin: 15px 0; line-height: 1.4;">${question.question}</p>
+                    <div style="margin: 15px 0;">
+                        ${optionsHtml}
+                    </div>
+                    <div style="text-align: center; margin-top: 15px;">
+                        <small style="color: #666;">問題 ${chatbotState.currentQuestion + 1} / ${mentalHealthQuestions.length}</small>
+                    </div>
+                </div>
+                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                            background: rgba(0,0,0,0.5); z-index: 999;" 
+                     onclick="closeChatbot()"></div>
+            `;
+            
+            const existingChatbot = document.getElementById('chatbot-container');
+            if (existingChatbot) existingChatbot.remove();
+            
+            const chatbotContainer = document.createElement('div');
+            chatbotContainer.id = 'chatbot-container';
+            chatbotContainer.innerHTML = chatbotHtml;
+            document.body.appendChild(chatbotContainer);
+        }
+
+        function answerChatbotQuestion(answerIndex) {
+            const question = mentalHealthQuestions[chatbotState.currentQuestion];
+            chatbotState.responses[question.id] = {
+                answer: question.options[answerIndex],
+                score: question.scores[answerIndex]
+            };
+            
+            chatbotState.currentQuestion++;
+            
+            setTimeout(() => {
+                showChatbotQuestion();
+            }, 300);
+        }
+
+        function completeChatbotScreening() {
+            let totalScore = 0;
+            Object.values(chatbotState.responses).forEach(response => {
+                totalScore += response.score;
+            });
+            
+            let riskLevel, recommendation;
+            if (totalScore <= 3) {
+                riskLevel = '良好';
+                recommendation = '你的心理狀態良好！繼續保持規律作息和適量運動。';
+            } else if (totalScore <= 6) {
+                riskLevel = '輕度壓力';
+                recommendation = '你可能承受輕度壓力。建議增加休息時間，嘗試放鬆練習。';
+            } else {
+                riskLevel = '需要關注';
+                recommendation = '你的壓力水平較高，建議尋求專業協助或與信任的人傾談。';
+            }
+            
+            chatbotState.lastScreeningDate = new Date().toISOString();
+            chatbotState.isActive = false;
+            
+            alert(`📊 心理健康評估結果\n\n狀態: ${riskLevel}\n總分: ${totalScore}/9\n\n建議: ${recommendation}`);
+            
+            closeChatbot();
+        }
+
+        function closeChatbot() {
+            const chatbotContainer = document.getElementById('chatbot-container');
+            if (chatbotContainer) {
+                chatbotContainer.remove();
+            }
+            chatbotState.isActive = false;
+        }
+
+        // 其他功能函數
+        function markTaken(type) { 
+            if (type === 'bp') {
+                alert('✅ 血壓藥已記錄！\n\n🤖 智能提示:\n• 藥物已壓碎服用 ✓\n• 飯前服用時間正確 ✓\n• 30分鐘後檢查頭暈狀況\n• 下次提醒: 明日 8:00');
+            } else {
+                alert('✅ 藥物記錄已更新！\n下次提醒已自動設置');
+            }
+        }
+        
+        function emergency() {
+            const emergencyHotlines = {
+                'zh-HK': '🚨 緊急求助熱線\n\n照顧者支援專線（照顧者專線）24小時服務\n182 183\n\n照顧者WhatsApp支援服務\n5322 2183\n\n明愛賽馬會照顧者資源及支援中心\n3892 0101\n\n社會福利署熱線\n2343 2255\n\n生命熱線\n2382 0000\n\n明愛向晴熱線\n18288\n\n醫院管理局精神健康專線\n2466 7350\n\n「情緒通」精神健康支援熱線\n18111',
+                'zh-CN': '🚨 紧急求助热线\n\n照护者支持专线（照护者专线）24小时服务\n182 183\n\n照护者WhatsApp支持服务\n5322 2183\n\n明爱赛马会照护者资源及支持中心\n3892 0101\n\n社会福利署热线\n2343 2255\n\n生命热线\n2382 0000\n\n明爱向晴热线\n18288\n\n医院管理局精神健康专线\n2466 7350\n\n"情绪通"精神健康支持热线\n18111',
+                'en': '🚨 Emergency Support Hotlines\n\nCaregiver Support Hotline (24-hour service)\n182 183\n\nCaregiver WhatsApp Support Service\n5322 2183\n\nCaritas Jockey Club Caregiver Resource & Support Centre\n3892 0101\n\nSocial Welfare Department Hotline\n2343 2255\n\nSamaritans Hotline\n2382 0000\n\nCaritas Family Crisis Support Centre\n18288\n\nHospital Authority Mental Health Hotline\n2466 7350\n\n"Shall We Talk" Mental Health Support Hotline\n18111',
+                'id': '🚨 Hotline Dukungan Darurat\n\nHotline Dukungan Pengasuh (layanan 24 jam)\n182 183\n\nLayanan Dukungan WhatsApp Pengasuh\n5322 2183\n\nPusat Sumber Daya & Dukungan Pengasuh Caritas Jockey Club\n3892 0101\n\nHotline Departemen Kesejahteraan Sosial\n2343 2255\n\nHotline Samaritans\n2382 0000\n\nHotline Caritas Family Crisis\n18288\n\nHotline Kesehatan Mental Otoritas Rumah Sakit\n2466 7350\n\nHotline Dukungan Kesehatan Mental "Shall We Talk"\n18111'
+            };
+            
+            const currentLang = document.querySelector('.lang-btn.active').textContent === '繁中' ? 'zh-HK' : 
+                              document.querySelector('.lang-btn.active').textContent === '简中' ? 'zh-CN' :
+                              document.querySelector('.lang-btn.active').textContent === 'EN' ? 'en' : 'id';
+            
+            alert(emergencyHotlines[currentLang]);
+        }
+        
+        function connectCaregivers() {
+            const connectMessages = {
+                'zh-HK': '🤝 歡迎加入照顧者社群！\n\n社群功能：\n• 經驗分享\n• 互相支援\n• 專家問答\n• 活動通知\n\n已為你配對：\n• 同區照顧者群組\n• 相似情況支援組',
+                'zh-CN': '🤝 欢迎加入照护者社群！\n\n社群功能：\n• 经验分享\n• 互相支持\n• 专家问答\n• 活动通知\n\n已为你配对：\n• 同区照护者群组\n• 相似情况支持组',
+                'en': '🤝 Welcome to the Caregiver Community!\n\nCommunity Features:\n• Experience sharing\n• Mutual support\n• Expert Q&A\n• Activity notifications\n\nMatched for you:\n• Local caregiver groups\n• Similar situation support groups',
+                'id': '🤝 Selamat datang di Komunitas Pengasuh!\n\nFitur Komunitas:\n• Berbagi pengalaman\n• Saling mendukung\n• Tanya jawab ahli\n• Notifikasi kegiatan\n\nCocok untuk Anda:\n• Grup pengasuh lokal\n• Grup dukungan situasi serupa'
+            };
+            
+            const currentLang = document.querySelector('.lang-btn.active').textContent === '繁中' ? 'zh-HK' : 
+                              document.querySelector('.lang-btn.active').textContent === '简中' ? 'zh-CN' :
+                              document.querySelector('.lang-btn.active').textContent === 'EN' ? 'en' : 'id';
+            
+            alert(connectMessages[currentLang]);
+        }
+        
+        function relaxation() { 
+            alert('🧘 開始太極放鬆練習\n\n• 15 分鐘引導練習\n• 改善血液循環\n• 減輕腰背痛\n• 紓緩壓力'); 
+        }
+        
+        function offerHelp() {
+            alert('🤝 協助陳太太\n\n建議行動:\n• 立即安排 4 小時休息\n• 其他照顧者接手\n• 提供情緒支援\n• 安排暫託服務\n\n已通知所有協作成員');
+        }
+
+        function emergencyRotation() {
+            alert('🚨 緊急輪班已啟動\n\n自動安排:\n• 陳太太: 強制休息 8 小時\n• 陳小姐: 接手日間護理\n• Maria: 負責夜間照顧\n\n所有成員已收到通知');
+        }
+
+        function scheduleBreak() {
+            alert('😴 強制休息已安排\n\n• 陳太太: 立即休息 8 小時\n• 其他成員已通知接手\n• 暫託服務已聯絡\n• 緊急聯絡已設置');
+        }
+
+        function contactResource(name, phone) {
+            alert(`📞 聯絡 ${name}\n\n電話: ${phone}\n\n選擇聯絡方式:\n1. 立即致電\n2. 預約服務\n3. 查詢詳情`);
+        }
+
+        function aiAnalysis() {
+            alert('🤖 AI 健康分析報告\n\n患者狀況:\n• 血壓偏高，建議調整藥物\n• 血糖控制良好\n• 體重穩定\n\n照顧者狀況:\n⚠️ 血壓危險水平\n⚠️ 睡眠嚴重不足\n\n建議:\n• 立即就醫檢查血壓\n• 安排其他人協助照顧\n• 增加休息時間');
+        }
+
+        function exportData() {
+            alert('📤 健康報告已匯出\n\n包含內容:\n• 過去30天血壓記錄\n• 血糖趨勢圖表\n• 藥物服用記錄\n• 照顧者健康狀況\n\n已發送至:\n• 家庭醫生\n• 專科醫生\n• 家庭成員');
+        }
+
+        function socialReminder() {
+            alert('👥 社交時間安排\n\n建議活動:\n• 週末與朋友茶聚\n• 參加照顧者支援小組\n• 社區中心活動\n• 線上照顧者聊天室\n\n已設置提醒通知');
+        }
+
+        function addToCalendar() {
+            alert('📅 預約已加入日曆\n\n• 2024年1月15日 14:30\n• 廣華醫院心臟科\n• 已設置提醒: 前一晚20:00 (禁食提醒)\n• 已設置提醒: 當日12:30 (出發提醒)');
+        }
+
+        function setPreReminder() {
+            alert('⏰ 預約提醒已設置\n\n提醒時間:\n• 前一晚 20:00 - 開始禁食\n• 當日 12:30 - 準備出發\n• 當日 14:00 - 即將到達\n\n特別提醒:\n• 帶身份證和病歷\n• 禁食8小時');
+        }
+
+        function shareWithFamily() {
+            alert('👥 預約資訊已分享\n\n已通知:\n• 陳小姐 (女兒)\n• Maria (外傭)\n• 緊急聯絡人\n\n包含資訊:\n• 預約時間地點\n• 注意事項\n• 接送安排');
+        }
+
+        function addMedication() {
+            alert('💊 藥物已加入清單\n\n• Amlodipine 5mg 已加入\n• 服用時間: 每日8:00, 20:00\n• 特殊指示: 壓碎服用，飯前\n• 剩餘數量: 30粒\n• 預計用完: 2024年2月15日');
+        }
+
+        function setMedReminder() {
+            alert('⏰ 服藥提醒已設置\n\n提醒時間:\n• 每日 7:45 - 準備服藥\n• 每日 19:45 - 準備服藥\n\n特別提醒:\n• 壓碎藥物\n• 飯前30分鐘服用\n• 觀察血壓變化');
+        }
+
+        function checkInteractions() {
+            alert('⚠️ 藥物相互作用檢查\n\n✅ 與現有藥物無衝突:\n• Metformin (糖尿病藥)\n• 維他命D\n\n注意事項:\n• 避免與葡萄柚同服\n• 監測血壓變化\n• 如有頭暈立即就醫');
+        }
+
+        function joinCommunity() {
+            alert('👥 歡迎加入照顧者社群！\n\n社群功能:\n• 經驗分享\n• 互相支援\n• 專家問答\n• 活動通知\n\n已為你配對:\n• 同區照顧者群組\n• 相似情況支援組');
+        }
+
+        function confirmTransport() {
+            alert('🚐 復康巴士預約確認\n\n預約詳情:\n• 日期: 週三\n• 時間: 09:00 接載\n• 地點: 物理治療中心\n• 回程: 11:30\n\n司機聯絡: 9876-5432');
+        }
+
+        function setReminder() { alert('⏰ 提醒已設置'); }
+        function recordReading() { alert('📊 請輸入血糖讀數'); }
+
+        // 啟動應用
+        window.onload = function() {
+            setTimeout(() => {
+                const today = new Date().toDateString();
+                if (lastQuoteDate !== today) {
+                    showQuote();
+                }
+            }, 3000);
+        };
+    </script>
+</body>
+</html>
